@@ -25,13 +25,20 @@ namespace AdventureWorksDapper.Controllers
 
             using (var connection = new SqlConnection(CONNECTION_STRING))
             {
-                for (int x = 0; x < 1000; x++)
+                await connection.OpenAsync();
+                
+                using (var transaction = connection.BeginTransaction())
                 {
-                    await connection.ExecuteAsync(sql, new { foobar = $"testing {DateTime.UtcNow.Ticks}" });
+                    for (int x = 0; x < 1000; x++)
+                    {
+                        if (x == 500) throw new Exception("Ouch");
+                        await connection.ExecuteAsync(sql, new { foobar = $"testing {DateTime.UtcNow.Ticks}" }, transaction:transaction);
+                    }
+                    transaction.Commit();
                 }
-                return Ok();
+                
             }
-            //return Ok();
+            return Ok();
         }
 
       
